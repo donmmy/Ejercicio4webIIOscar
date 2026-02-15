@@ -1,43 +1,62 @@
 import { todo } from "../data/todo.js";
 
+const todos = todo.todos;
+
 export const getTodos = (req, res) => {
-    res.json(todo);
+    let resultados = [...todos];
+    const { completado, prioridad, fechaCreacion } = req.query;
+    if (completado) {
+        resultados = resultados.filter(todo => todo.completado === completado);
+    } else {
+        resultados = resultados.filter(todo => todo.completado !== completado);
+    }
+    if (prioridad == 'alta') {
+        resultados = resultados.filter(todo => todo.prioridad === 'alta');
+    } else if (prioridad == 'media') {
+        resultados = resultados.filter(todo => todo.prioridad === 'media');
+    } else if (prioridad == 'baja') {
+        resultados = resultados.filter(todo => todo.prioridad === 'baja');
+    }
+    res.json(resultados);
 }
 
 export const getTodoById = (req, res) => {
-    const id = req.params.id;
-    const todo = todo.find(todo => todo.id === id);
-    res.json(todo);
+    const { id } = parseInt(req.params.id);
+    const todo = todos.find(todo => todo.id === id);
+    if (todo) {
+        res.json(todo);
+    } else {
+        res.status(404).json({ message: 'Todo no encontrado' });
+    }
 }
 
 export const createTodo = (req, res) => {
-    const todo = req.body;
-    todo.id = todo.length + 1;
-    todo.push(todo);
-    res.json(todo);
+    const { titulo, descripcion, completado, prioridad } = req.body;
+    const newTodo = {
+        id: todos.length + 1,
+        titulo,
+        descripcion,
+        completado,
+        prioridad,
+        fechaCreacion: new Date(),
+    };
+    todos.push(newTodo);
+    res.status(201).json({ message: 'Todo creado exitosamente' });
 }
 
 export const updateTodo = (req, res) => {
-    const id = req.params.id;
-    const todo = todo.find(todo => todo.id === id);
-    todo.titulo = req.body.titulo;
-    todo.descripcion = req.body.descripcion;
-    todo.completado = req.body.completado;
-    todo.prioridad = req.body.prioridad;
-    todo.fechaCreacion = req.body.fechaCreacion;
-    res.json(todo);
-}
+    const { id } = parseInt(req.params.id);
+    const todoIndex = todos.findIndex(todo => todo.id === id);
 
-export const deleteTodo = (req, res) => {
-    const id = req.params.id;
-    const todo = todo.find(todo => todo.id === id);
-    todo.splice(todo.indexOf(todo), 1);
-    res.json(todo);
-}
-
-export const patchTodo = (req, res) => {
-    const id = req.params.id;
-    const todo = todo.find(todo => todo.id === id);
-    todo.completado = !todo.completado;
-    res.json(todo);
+    if (todoIndex === -1) {
+        return res.status(404).json({ message: 'Todo no encontrado' });
+    }
+    const { completado, prioridad, fechaCreacion } = req.body;
+    todos[todoIndex] = {
+        ...todos[todoIndex],
+        completado,
+        prioridad,
+        fechaCreacion,
+    };
+    res.json({ message: 'Todo actualizado exitosamente con id:' + todos[todoIndex] });
 }
